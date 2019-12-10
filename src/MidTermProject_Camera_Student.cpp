@@ -38,7 +38,7 @@ int main(int argc, const char *argv[])
 
     // misc
     int dataBufferSize = 2;       // no. of images which are held in memory (ring buffer) at the same time
-    queue<DataFrame> dataBuffer; // list of data frames which are held in memory at the same time
+    vector<DataFrame> dataBuffer; // list of data frames which are held in memory at the same time
     bool bVis = false;            // visualize results
 
     /* MAIN LOOP OVER ALL IMAGES */
@@ -65,9 +65,9 @@ int main(int argc, const char *argv[])
         frame.cameraImg = imgGray;
 
         if (dataBuffer.size() == dataBufferSize) {
-            dataBuffer.pop();
+            dataBuffer.erase(dataBuffer.begin());
         }
-        dataBuffer.push(frame);
+        dataBuffer.push_back(frame);
 
         //// EOF STUDENT ASSIGNMENT
         cout << "#1 : LOAD IMAGE INTO BUFFER done" << endl;
