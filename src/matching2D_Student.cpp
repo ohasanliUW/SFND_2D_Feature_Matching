@@ -4,8 +4,14 @@
 using namespace std;
 
 // Find best matches for keypoints in two camera images based on several matching methods
-void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::KeyPoint> &kPtsRef, cv::Mat &descSource, cv::Mat &descRef,
-                      std::vector<cv::DMatch> &matches, std::string descriptorType, std::string matcherType, std::string selectorType)
+void
+matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource,
+                 std::vector<cv::KeyPoint> &kPtsRef,
+                 cv::Mat &descSource, cv::Mat &descRef,
+                 std::vector<cv::DMatch> &matches,
+                 std::string descriptorType,
+                 std::string matcherType,
+                 std::string selectorType)
 {
     // configure matcher
     bool crossCheck = false;
@@ -35,7 +41,9 @@ void matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource, std::vector<cv::Key
 }
 
 // Use one of several types of state-of-art descriptors to uniquely identify keypoints
-void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descriptors, string descriptorType)
+void
+descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img,
+              cv::Mat &descriptors, string descriptorType)
 {
     // select appropriate descriptor
     cv::Ptr<cv::DescriptorExtractor> extractor;
@@ -61,8 +69,65 @@ void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descr
     cout << descriptorType << " descriptor extraction in " << 1000 * t / 1.0 << " ms" << endl;
 }
 
+void
+detKeypointsHarris(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis)
+{
+    int blockSize = 2; // for every pixel, a blockSize × blockSize neighborhood is considered
+    int apertureSize = 3; // aperture parameter for Sobel operator (must be odd)
+    int minResponse = 100; // minimum value for a corner in the 8bit scaled response matrix
+    double k = 0.04; // Harris parameter (see equation for details)
+    double maxOverlap = 0.0;
+
+    cv::Mat dst, dst_norm, dst_norm_scaled;
+    dst = cv::Mat::zeros(img.size(), CV_32FC1);
+    cv::cornerHarris(img, dst, blockSize, apertureSize, k);
+    cv::normalize(dst, dst_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1, cv::Mat());
+    cv::convertScaleAbs(dst_norm, dst_norm_scaled);
+
+    for (int j = 0; j < dst_norm.rows; j++) {
+        for (int i = 0; i < dst_norm.cols; i++) {
+            int response = (int)dst_norm.at<float>(j, i);
+
+            if (response > minResponse) {
+                cv::KeyPoint newKeyPoint(cv::Point2f(i, j), 2 * apertureSize, response);
+
+                // perform non-maximum suppression (NMS) in local neighbourhood around new key point
+                bool bOverlap = false;
+                for (auto& it : keypoints) {
+                    double kptOverlap = cv::KeyPoint::overlap(newKeyPoint, it);
+
+                    if (kptOverlap > maxOverlap) {
+                        bOverlap = true;
+
+                        if (newKeyPoint.response > it.response) {
+                            it = newKeyPoint; // replace old key point with new one
+                            break;             // quit loop over keypoints
+                        }
+                    }
+                }
+                if (!bOverlap) {
+                    // only add new key point if no overlap has been found in previous NMS
+                    keypoints.push_back(newKeyPoint); // store new keypoint in dynamic list
+                }
+            }
+        }
+    }
+
+    // visualize results
+    if (bVis)
+    {
+        cv::Mat visImage = img.clone();
+        cv::drawKeypoints(img, keypoints, visImage, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+        string windowName = "Shi-Tomasi Corner Detector Results";
+        cv::namedWindow(windowName, 6);
+        imshow(windowName, visImage);
+        cv::waitKey(0);
+    }
+}
+
 // Detect keypoints in image using the traditional Shi-Thomasi detector
-void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis)
+void
+detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis)
 {
     // compute detector parameters based on image size
     int blockSize = 4;       //  size of an average block for computing a derivative covariation matrix over each pixel neighborhood
@@ -91,6 +156,48 @@ void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool b
     cout << "Shi-Tomasi detection with n=" << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
 
     // visualize results
+    if (bVis)
+    {
+        cv::Mat visImage = img.clone();
+        cv::drawKeypoints(img, keypoints, visImage, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+        string windowName = "Shi-Tomasi Corner Detector Results";
+        cv::namedWindow(windowName, 6);
+        imshow(windowName, visImage);
+        cv::waitKey(0);
+    }
+}
+
+void
+detKeypointsModern(vector<cv::KeyPoint> &keypoints,
+                   cv::Mat              &img,
+                   string               detectorType,
+                   bool                 bVis)
+{
+
+    cv::Ptr<cv::FeatureDetector> detector;
+
+    if (detectorType == "BRISK") {
+        detector = cv::BRISK::create();
+    } else if (detectorType == "ORB") {
+        detector = cv::ORB::create();
+    } else if (detectorType == "AKAZE") {
+        detector = cv::AKAZE::create();
+    } else if (detectorType == "FAST") {
+        detector = cv::FastFeatureDetector::create();
+    } else if (detectorType == "SIFT") {
+        detector = cv::xfeatures2d::SIFT::create();
+    } else if (detectorType == "HARRIS") {
+
+    } else {
+        cout << "Invalid detector type \"" << detectorType << "\"" << endl;
+        return;
+    }
+
+    double t = (double)cv::getTickCount();
+    detector->detect(img, keypoints);
+    t = (double)cv::getTickCount();
+    cout << detectorType << " detection with n=" << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
+
     if (bVis)
     {
         cv::Mat visImage = img.clone();

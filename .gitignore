@@ -1,0 +1,7 @@
+build
+*.cscope
+*.o
+tags
+*.out
+.ccls*
+
