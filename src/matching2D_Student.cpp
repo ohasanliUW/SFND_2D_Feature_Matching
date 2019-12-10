@@ -78,12 +78,14 @@ detKeypointsHarris(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis)
     double k = 0.04; // Harris parameter (see equation for details)
     double maxOverlap = 0.0;
 
+    double t = (double)cv::getTickCount();
     cv::Mat dst, dst_norm, dst_norm_scaled;
     dst = cv::Mat::zeros(img.size(), CV_32FC1);
     cv::cornerHarris(img, dst, blockSize, apertureSize, k);
     cv::normalize(dst, dst_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1, cv::Mat());
     cv::convertScaleAbs(dst_norm, dst_norm_scaled);
 
+    cout << "CHECKPOINT 1" << endl;
     for (int j = 0; j < dst_norm.rows; j++) {
         for (int i = 0; i < dst_norm.cols; i++) {
             int response = (int)dst_norm.at<float>(j, i);
@@ -112,6 +114,8 @@ detKeypointsHarris(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis)
             }
         }
     }
+    t = (double)cv::getTickCount();
+    cout << "Harris detection with n=" << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
 
     // visualize results
     if (bVis)
@@ -187,7 +191,8 @@ detKeypointsModern(vector<cv::KeyPoint> &keypoints,
     } else if (detectorType == "SIFT") {
         detector = cv::xfeatures2d::SIFT::create();
     } else if (detectorType == "HARRIS") {
-
+        detKeypointsHarris(keypoints, img, bVis);
+        return;
     } else {
         cout << "Invalid detector type \"" << detectorType << "\"" << endl;
         return;
