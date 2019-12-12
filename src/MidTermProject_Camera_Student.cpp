@@ -83,7 +83,7 @@ int main(int argc, const char *argv[])
         //// and enable string-based selection based on detectorType
         //// -> HARRIS, FAST, BRISK, ORB, AKAZE, SIFT
 
-        if (argc == 2) {
+        if (argc > 1) {
             detectorType = string(argv[1]);
         }
 
@@ -105,13 +105,21 @@ int main(int argc, const char *argv[])
         cv::Rect vehicleRect(535, 180, 180, 150);
         if (bFocusOnVehicle)
         {
+            vector<cv::KeyPoint> matched;
+            cout << "Focusing on preceding vehicle" << endl;
             // ...
+            for (auto it = keypoints.begin(); it != keypoints.end(); it++) {
+                if (vehicleRect.contains(it->pt)) {
+                    matched.push_back(*it);
+                }
+            }
+            keypoints = matched;
         }
 
         //// EOF STUDENT ASSIGNMENT
 
         // optional : limit number of keypoints (helpful for debugging and learning)
-        bool bLimitKpts = false;
+        bool bLimitKpts = true;
         if (bLimitKpts)
         {
             int maxKeypoints = 50;
@@ -136,6 +144,14 @@ int main(int argc, const char *argv[])
 
         cv::Mat descriptors;
         string descriptorType = "BRISK"; // BRIEF, ORB, FREAK, AKAZE, SIFT
+
+        if (argc > 2) {
+            descriptorType = string(argv[2]);
+        }
+        if (descriptorType == "SIFT" && (detectorType != "SIFT" && detectorType != "HARRIS")) {
+            cerr << "SIFT descriptor cannot be combined with binary detector (" << detectorType << ")" << endl;
+            return 1;
+        }
         descKeypoints((dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->cameraImg, descriptors, descriptorType);
         //// EOF STUDENT ASSIGNMENT
 
@@ -151,8 +167,17 @@ int main(int argc, const char *argv[])
 
             vector<cv::DMatch> matches;
             string matcherType = "MAT_BF";        // MAT_BF, MAT_FLANN
-            string descriptorType = "DES_BINARY"; // DES_BINARY, DES_HOG
+            //string descriptorType = "DES_BINARY"; // DES_BINARY, DES_HOG
+            // Binary descriptor is not applicable to SIFT or HARRIS detector types
+            string descriptorType = (detectorType == "SIFT" || detectorType == "HARRIS" ? "DES_HOG" : "DES_BINARY");
             string selectorType = "SEL_NN";       // SEL_NN, SEL_KNN
+
+            if (argc > 3) {
+                matcherType = string(argv[3]);
+            }
+            if (argc > 4) {
+                selectorType = string(argv[4]);
+            }
 
             //// STUDENT ASSIGNMENT
             //// TASK MP.5 -> add FLANN matching in file matching2D.cpp
@@ -170,7 +195,7 @@ int main(int argc, const char *argv[])
             cout << "#4 : MATCH KEYPOINT DESCRIPTORS done" << endl;
 
             // visualize matches between current and previous image
-            bVis = true;
+            bVis = false;
             if (bVis)
             {
                 cv::Mat matchImg = ((dataBuffer.end() - 1)->cameraImg).clone();
