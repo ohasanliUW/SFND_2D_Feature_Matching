@@ -32,3 +32,22 @@ See the classroom instruction and code comments for more details on each of thes
 2. Make a build directory in the top level directory: `mkdir build && cd build`
 3. Compile: `cmake .. && make`
 4. Run it: `./2D_feature_tracking`.
+
+
+## REPORT
+* Data Buffer:
+  * MP.1 Data Buffer Optimization:
+        vector<template T> STL container allows to remove elements from vector specified with an iterator. Hence, if size of vector is greater than 1, then we should remove the first element and push_back the new element.
+
+
+* Keypoints:
+  * MP.2 Keypoint Detection:
+        OpenCV has majority of the detectors/descriptors implemented. Every detector implements "FeatureDetector" interface in their own namespaces. To create a detector, create() function needs to be called which return a shared pointer to "cv::FeatureDetector" (the object gets destructed once it gets out of scope - RAII). The namespace is chosen based on the string parameter that specifies detector type.
+        For "Harris" detector, I have used the implementation from Lesson 4 quiz. Hence, it has its own execution path; detKeypointsModern() will call detKeypointsHarris() if type "HARRIS" is specified. As soon as detKeypointsHarris() returns, detKeypointsModern() will return as well.
+
+  * MP.3 Keypoint Removal
+        The preceding vehicle is expected to be within rectangle of (535, 180, 180, 150). The class cv::Rect has a member function "bool contains(cv::Point)". For every keypoint we have detected, we have to check whether rectangle contains that point. If yes, we add the point to a new list. Creating a new list and pushing inliers is much cheaper than just removing element from list (easy to read, maintain, and might be faster if erase() is not O(1))
+
+* Descriptors:
+  * MP.4 Keypoint Descriptors:
+        Similar to detectors, we can use create() function to create a descriptor. Based on the specified type via a string parameter, we can call create() from appropriate namespace.
