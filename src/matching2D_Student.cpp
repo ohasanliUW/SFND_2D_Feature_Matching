@@ -24,7 +24,8 @@ matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource,
     }
     else if (matcherType.compare("MAT_FLANN") == 0)
     {
-        // ...
+        // FLANN requires floating type for input matrices
+        // if type is not CV_32F, convert into it
         if (descSource.type() != CV_32F) {
             descSource.convertTo(descSource, CV_32F);
         }
@@ -41,12 +42,13 @@ matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource,
     // perform matching task
     if (selectorType.compare("SEL_NN") == 0)
     { // nearest neighbor (best match)
-
-        matcher->match(descSource, descRef, matches); // Finds the best match for each descriptor in desc1
+        // Finds the best match for each descriptor in desc1
+        matcher->match(descSource, descRef, matches);
     } else if (selectorType.compare("SEL_KNN") == 0) {
         // k nearest neighbors (k=2)
         vector<vector<cv::DMatch>> knn_matches;
 
+        // if cross check is enabled, k must be 1
         matcher->knnMatch(descSource, descRef, knn_matches, crossCheck ? 1 : 2);
 
         double minDescDistRation = 0.8;
