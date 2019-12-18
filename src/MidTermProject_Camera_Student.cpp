@@ -107,7 +107,7 @@ int main(int argc, const char *argv[])
         {
             vector<cv::KeyPoint> matched;
             cout << "Focusing on preceding vehicle" << endl;
-            // ...
+
             for (auto it = keypoints.begin(); it != keypoints.end(); it++) {
                 if (vehicleRect.contains(it->pt)) {
                     matched.push_back(*it);
@@ -119,7 +119,7 @@ int main(int argc, const char *argv[])
         //// EOF STUDENT ASSIGNMENT
 
         // optional : limit number of keypoints (helpful for debugging and learning)
-        bool bLimitKpts = true;
+        bool bLimitKpts = false;
         if (bLimitKpts)
         {
             int maxKeypoints = 50;

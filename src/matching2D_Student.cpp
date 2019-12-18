@@ -42,13 +42,12 @@ matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource,
     if (selectorType.compare("SEL_NN") == 0)
     { // nearest neighbor (best match)
 
-        cout << "SOURCE EMPTY?: " << descSource.empty() << "\tREF EMPTY?: " << descRef.empty() << endl;
         matcher->match(descSource, descRef, matches); // Finds the best match for each descriptor in desc1
     } else if (selectorType.compare("SEL_KNN") == 0) {
         // k nearest neighbors (k=2)
         vector<vector<cv::DMatch>> knn_matches;
 
-        matcher->knnMatch(descSource, knn_matches, crossCheck ? 1 : 2);
+        matcher->knnMatch(descSource, descRef, knn_matches, crossCheck ? 1 : 2);
 
         double minDescDistRation = 0.8;
         for (auto& match : knn_matches) {
@@ -58,7 +57,10 @@ matchDescriptors(std::vector<cv::KeyPoint> &kPtsSource,
         }
     } else {
         cerr << "Invalid selector type " << selectorType << endl;
+        return;
     }
+
+    cout << "Matched " << matches.size() << " keypoints" << endl;
 }
 
 // Use one of several types of state-of-art descriptors to uniquely identify keypoints
@@ -138,7 +140,7 @@ detKeypointsHarris(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool bVis)
             }
         }
     }
-    t = (double)cv::getTickCount();
+    t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
     cout << "Harris detection with n=" << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
 
     // visualize results
@@ -224,7 +226,7 @@ detKeypointsModern(vector<cv::KeyPoint> &keypoints,
 
     double t = (double)cv::getTickCount();
     detector->detect(img, keypoints);
-    t = (double)cv::getTickCount();
+    t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
     cout << detectorType << " detection with n=" << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
 
     if (bVis)
