@@ -35,6 +35,18 @@ See the classroom instruction and code comments for more details on each of thes
 
 
 ## REPORT
+
+NOTES:
+I have implemented a python3 script that runs various combinations of detectors and descriptors to collect all the necessary data for analysis. Then it analysis the individual detection, extraction times as well as average time spent for each step. Based on the calculations, it sorts the collected data and reports top 3 detectors, descriptors and combinations of both. Invalid combinations will be reported and no data will be collected for them.
+
+The script also analyzes number of detected and extracted keypoints for MP7 and MP8 parts.
+To run the script, first all the dependencies need to be installed, such as tabulate:
+        pip install tabulate
+        pip3 install tabulate
+
+from 'tools' directory, execute 'python3 analyze.py | tee result.txt'. it will dump results to both stdout and save the results in result.txt file as well.
+
+
 * Data Buffer:
   * MP.1 Data Buffer Optimization:
         vector<template T> STL container allows to remove elements from vector specified with an iterator. Hence, if size of vector is greater than 1, then we should remove the first element and push_back the new element.
